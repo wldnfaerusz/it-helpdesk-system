@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem IT Helpdesk - Balai Pustaka</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Header Navbar -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white">
+                        <i data-lucide="headphone-off" class="w-6 h-6 hidden"></i>
+                        <i data-lucide="headphones" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight">IT Helpdesk</h1>
+                        <p class="text-xs text-slate-400">Balai Pustaka Portal Service</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs / Role Switcher -->
+                <div class="flex items-center space-x-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
+                    <button id="nav-user-btn" onclick="switchRole('user')" class="flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-blue-600 text-white shadow">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>Portal Karyawan</span>
+                    </button>
+                    <button id="nav-admin-btn" onclick="switchRole('admin')" class="flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        <span>Dashboard IT</span>
+                        <span id="badge-open-count" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+        
+        <!-- Toast Notification Container -->
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- ==================== USER PORTAL VIEW ==================== -->
+        <div id="user-portal-view" class="space-y-6">
+            <!-- Banner / Intro -->
+            <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-2xl p-6 text-white shadow-lg">
+                <div class="max-w-3xl">
+                    <h2 class="text-2xl font-bold mb-2">Selamat Datang di IT Helpdesk</h2>
+                    <p class="text-blue-100 text-sm leading-relaxed">
+                        Butuh bantuan teknis, perbaikan perangkat, atau permintaan akses akun? Silakan buat tiket pengaduan di bawah ini. Tim IT Balai Pustaka siap membantu Anda.
+                    </p>
+                </div>
+            </div>
+
+            <!-- User Sub Navigation -->
+            <div class="flex border-b border-slate-200">
+                <button id="tab-create-btn" onclick="switchUserTab('create')" class="py-3 px-6 text-sm font-semibold border-b-2 border-blue-600 text-blue-600 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Buat Tiket Baru
+                </button>
+                <button id="tab-history-btn" onclick="switchUserTab('history')" class="py-3 px-6 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4 h-4"></i> Tiket Saya (<span id="user-ticket-count">0</span>)
+                </button>
+            </div>
+
+            <!-- Create Ticket Section -->
+            <div id="user-create-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <form id="create-ticket-form" onsubmit="handleCreateTicket(event)" class="space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="user-check" class="w-5 h-5 text-blue-600"></i> Informasi Pelapor
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-1">Lengkapi data diri Anda untuk memudahkan verifikasi tim IT.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Nama Lengkap *</label>
+                            <input type="text" id="user_nama" required placeholder="Contoh: Budi Santoso" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Email Perusahaan *</label>
+                            <input type="email" id="user_email" required placeholder="budi@balaipustaka.co.id" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Departemen / Divisi *</label>
+                            <select id="user_divisi" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white">
+                                <option value="">-- Pilih Divisi --</option>
+                                <option value="Redaksi & Penerbitan">Redaksi & Penerbitan</option>
+                                <option value="Pemasaran & Penjualan">Pemasaran & Penjualan</option>
+                                <option value="Keuangan & SDM">Keuangan & SDM</option>
+                                <option value="Produksi & Logistik">Produksi & Logistik</option>
+                                <option value="Digital & IT">Digital & IT</option>
+                                <option value="Direksi / Sekretariat">Direksi / Sekretariat</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Lokasi / Lantai / Ruangan *</label>
+                            <input type="text" id="user_lokasi" required placeholder="Contoh: Gedung A, Lantai 3, Ruang Redaksi" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Kategori Masalah / Permintaan *</label>
+                            <select id="user_kategori" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white">
+                                <option value="">-- Pilih Kategori --</option>
+                                <option value="Hardware (PC, Laptop, Printer)">Hardware (PC, Laptop, Printer)</option>
+                                <option value="Software / Aplikasi">Software / Aplikasi</option>
+                                <option value="Jaringan / Internet / WiFi">Jaringan / Internet / WiFi</option>
+                                <option value="Email & Akses Akun">Email & Akses Akun</option>
+                                <option value="Keamanan / Virus">Keamanan / Virus</option>
+                                <option value="Sistem ERP / Database">Sistem ERP / Database</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border-b border-slate-100 pb-2 pt-2">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i> Detail Masalah
+                        </h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Perangkat / Sistem Terdampak</label>
+                            <input type="text" id="user_perangkat" placeholder="Contoh: Laptop ThinkPad X1 / Printer HP LaserJet 1020" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Tingkat Prioritas *</label>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                <label class="border border-slate-200 rounded-xl p-2.5 flex items-center cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="prioritas" value="Tinggi" required class="text-red-600 focus:ring-red-500">
+                                    <span class="ml-2 text-xs font-medium text-red-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-red-500"></span> Tinggi
+                                    </span>
+                                </label>
+                                <label class="border border-slate-200 rounded-xl p-2.5 flex items-center cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="prioritas" value="Sedang" class="text-amber-600 focus:ring-amber-500" checked>
+                                    <span class="ml-2 text-xs font-medium text-amber-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Sedang
+                                    </span>
+                                </label>
+                                <label class="border border-slate-200 rounded-xl p-2.5 flex items-center cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="prioritas" value="Rendah" class="text-green-600 focus:ring-green-500">
+                                    <span class="ml-2 text-xs font-medium text-green-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-green-500"></span> Rendah
+                                    </span>
+                                </label>
+                                <label class="border border-slate-200 rounded-xl p-2.5 flex items-center cursor-pointer hover:bg-slate-50 transition">
+                                    <input type="radio" name="prioritas" value="Informasi" class="text-blue-600 focus:ring-blue-500">
+                                    <span class="ml-2 text-xs font-medium text-blue-600 flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-blue-500"></span> Info
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase mb-2">Deskripsi Lengkap Masalah *</label>
+                        <textarea id="user_deskripsi" rows="4" required placeholder="Jelaskan secara singkat kendala yang Anda alami. Contoh: Tidak bisa mencetak dokumen ke printer jaringan sejak pagi ini, muncul error code 0x0000011b." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button type="reset" class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                            Reset Form
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-200 transition flex items-center gap-2">
+                            <i data-lucide="send" class="w-4 h-4"></i> Kirim Tiket
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- User Ticket History Section -->
+            <div id="user-history-section" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hidden">
+                <!-- Search & Filter History -->
+                <div class="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+                    <div class="relative w-full md:w-80">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                        <input type="text" id="user-search-input" onkeyup="renderUserTickets()" placeholder="Cari tiket ID, judul, atau status..." class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1">
+                        <button onclick="filterUserStatus('ALL')" class="user-status-filter bg-blue-50 text-blue-600 font-semibold px-3 py-1.5 rounded-lg text-xs">Semua</button>
+                        <button onclick="filterUserStatus('Open')" class="user-status-filter bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs">Open</button>
+                        <button onclick="filterUserStatus('In Progress')" class="user-status-filter bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs">In Progress</button>
+                        <button onclick="filterUserStatus('Resolved')" class="user-status-filter bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs">Resolved</button>
+                        <button onclick="filterUserStatus('Closed')" class="user-status-filter bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs">Closed</button>
+                    </div>
+                </div>
+
+                <!-- Tickets List Grid / Cards -->
+                <div id="user-tickets-list" class="space-y-4">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN DASHBOARD VIEW ==================== -->
+        <div id="admin-dashboard-view" class="space-y-6 hidden">
+            <!-- Top Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase text-slate-500">Total Tiket</p>
+                        <h3 id="stat-total" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-xl text-blue-600">
+                        <i data-lucide="ticket" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase text-slate-500">Tiket Open</p>
+                        <h3 id="stat-open" class="text-2xl font-bold text-red-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded-xl text-red-600">
+                        <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase text-slate-500">Sedang Ditangani</p>
+                        <h3 id="stat-progress" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-xl text-amber-600">
+                        <i data-lucide="clock" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase text-slate-500">Selesai (Resolved)</p>
+                        <h3 id="stat-resolved" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-xl text-emerald-600">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold uppercase text-slate-500">Rata-Rata Respon</p>
+                        <h3 id="stat-avg" class="text-2xl font-bold text-indigo-600 mt-1">1.2 jam</h3>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-xl text-indigo-600">
+                        <i data-lucide="zap" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section (Collapsible) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i> Distribusi Kategori Kendala
+                    </h4>
+                    <div class="h-48 relative flex justify-center items-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-sm text-slate-700 mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-4 h-4 text-blue-600"></i> Status Tiket Saat Ini
+                    </h4>
+                    <div class="h-48 relative flex justify-center items-center">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticket Management Section -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+                <!-- Header Filters & Tools -->
+                <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Daftar Tiket IT Helpdesk</h3>
+                        <p class="text-xs text-slate-500">Kelola, atur status, dan tugaskan teknisi IT untuk menangani keluhan.</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="exportToCSV()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                            <i data-lucide="download" class="w-4 h-4"></i> Ekspor CSV
+                        </button>
+                        <button onclick="resetMockData()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold flex items-center gap-2 transition" title="Reset Data Simulasi">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Controls -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                        <input type="text" id="admin-search" onkeyup="renderAdminTickets()" placeholder="Cari ID, Pelapor, Deskripsi..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <select id="admin-filter-status" onchange="renderAdminTickets()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Semua Status</option>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <select id="admin-filter-prioritas" onchange="renderAdminTickets()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Semua Prioritas</option>
+                        <option value="Tinggi">Tinggi</option>
+                        <option value="Sedang">Sedang</option>
+                        <option value="Rendah">Rendah</option>
+                        <option value="Informasi">Informasi</option>
+                    </select>
+                    <select id="admin-filter-kategori" onchange="renderAdminTickets()" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Semua Kategori</option>
+                        <option value="Hardware (PC, Laptop, Printer)">Hardware</option>
+                        <option value="Software / Aplikasi">Software / Aplikasi</option>
+                        <option value="Jaringan / Internet / WiFi">Jaringan / WiFi</option>
+                        <option value="Email & Akses Akun">Email & Akun</option>
+                        <option value="Keamanan / Virus">Keamanan</option>
+                        <option value="Sistem ERP / Database">ERP / Database</option>
+                    </select>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider">
+                                <th class="p-3">ID Tiket</th>
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">Pelapor / Divisi</th>
+                                <th class="p-3">Kategori</th>
+                                <th class="p-3">Prioritas</th>
+                                <th class="p-3">Teknisi (Assign)</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tickets-table-body" class="divide-y divide-slate-100 bg-white">
+                            <!-- Dynamic Content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail & Response Modal -->
+    <div id="ticket-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <span id="modal-ticket-id" class="px-2.5 py-1 bg-blue-100 text-blue-700 font-mono font-bold rounded-lg text-xs">#TK-0000</span>
+                    <span id="modal-ticket-status" class="px-2.5 py-1 rounded-full text-xs font-semibold">Open</span>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6 flex-grow">
+                <!-- Ticket Overview -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl text-xs border border-slate-100">
+                    <div>
+                        <p class="text-slate-400 font-medium">Pelapor:</p>
+                        <p id="modal-user-info" class="font-bold text-slate-800">Nama Pelapor (Divisi)</p>
+                        <p id="modal-email-info" class="text-slate-500">email@balaipustaka.co.id</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">Lokasi / Ruang:</p>
+                        <p id="modal-lokasi-info" class="font-semibold text-slate-700">Lantai 2, Ruang IT</p>
+                        <p class="text-slate-400 font-medium mt-2">Perangkat / Sistem:</p>
+                        <p id="modal-perangkat-info" class="font-semibold text-slate-700">Laptop Dell</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">Kategori:</p>
+                        <p id="modal-kategori-info" class="font-semibold text-slate-700">Hardware</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium">Prioritas:</p>
+                        <p id="modal-prioritas-info" class="font-bold text-red-600">Tinggi</p>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <h5 class="text-xs uppercase font-bold text-slate-400 mb-2">Deskripsi Permasalahan</h5>
+                    <div id="modal-deskripsi" class="p-4 bg-blue-50/50 border border-blue-100 rounded-xl text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                        Deskripsi masalah...
+                    </div>
+                </div>
+
+                <!-- Admin Action Toolbar (Only shown for Admin) -->
+                <div id="modal-admin-actions" class="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-3">
+                    <h5 class="text-xs uppercase font-bold text-slate-500 flex items-center gap-1">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Pengaturan Tiket (IT Admin)
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Status Tiket</label>
+                            <select id="modal-status-select" onchange="updateTicketStatus()" class="w-full p-2 bg-white border border-slate-300 rounded-lg font-semibold text-xs">
+                                <option value="Open">Open</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Resolved">Resolved</option>
+                                <option value="Closed">Closed</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Tugaskan Ke (Teknisi)</label>
+                            <select id="modal-assignee-select" onchange="updateTicketAssignee()" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs">
+                                <option value="Belum Ditugaskan">Belum Ditugaskan</option>
+                                <option value="Rian (Network Support)">Rian (Network)</option>
+                                <option value="Andi (Hardware Tech)">Andi (Hardware)</option>
+                                <option value="Siti (System Admin)">Siti (Sys Admin)</option>
+                                <option value="Bagus (Helpdesk)">Bagus (Helpdesk)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Ubah Prioritas</label>
+                            <select id="modal-priority-select" onchange="updateTicketPriority()" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs">
+                                <option value="Tinggi">Tinggi</option>
+                                <option value="Sedang">Sedang</option>
+                                <option value="Rendah">Rendah</option>
+                                <option value="Informasi">Informasi</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discussion & Timeline / Response History -->
+                <div>
+                    <h5 class="text-xs uppercase font-bold text-slate-400 mb-3 flex items-center gap-1">
+                        <i data-lucide="message-square" class="w-4 h-4"></i> Riwayat Tanggapan & Catatan
+                    </h5>
+                    <div id="modal-responses-list" class="space-y-3">
+                        <!-- Dynamic Replies -->
+                    </div>
+                </div>
+
+                <!-- Reply Input Form -->
+                <div class="border-t border-slate-200 pt-4">
+                    <form onsubmit="handleSendReply(event)" class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-700">Tambah Tanggapan / Balasan</label>
+                            <div id="internal-note-toggle-wrapper" class="flex items-center gap-2 hidden">
+                                <input type="checkbox" id="is-internal-note" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+                                <label for="is-internal-note" class="text-xs text-amber-700 font-semibold cursor-pointer">Catatan Internal IT (Pengguna tidak melihat)</label>
+                            </div>
+                        </div>
+                        <textarea id="reply-text" rows="3" required placeholder="Tuliskan jawaban, update progres, atau perbaikan..." class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i> Kirim Balasan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>&copy; 2026 PT Balai Pustaka - Sistem Informasi Helpdesk & Ticketing IT</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data State
+        let currentRole = 'user'; // 'user' or 'admin'
+        let currentActiveUserTab = 'create'; // 'create' or 'history'
+        let currentUserStatusFilter = 'ALL';
+        let tickets = [];
+        let activeModalTicketId = null;
+        let categoryChartInstance = null;
+        let statusChartInstance = null;
+
+        // Mock Initial Data
+        const initialMockTickets = [
+            {
+                id: 'TK-1001',
+                nama: 'Budi Santoso',
+                email: 'budi.santoso@balaipustaka.co.id',
+                divisi: 'Redaksi & Penerbitan',
+                lokasi: 'Gedung A, Lt 2, Ruang Redaksi',
+                kategori: 'Hardware (PC, Laptop, Printer)',
+                perangkat: 'Printer HP LaserJet Pro M404',
+                prioritas: 'Tinggi',
+                deskripsi: 'Printer tidak mau menarik kertas dan muncul lampu indikator paper jam terus menerus.',
+                status: 'Open',
+                assignee: 'Andi (Hardware Tech)',
+                created_at: '2026-10-07 09:30',
+                responses: [
+                    {
+                        sender: 'Budi Santoso',
+                        role: 'User',
+                        text: 'Mohon dibantu, proses cetak naskah buku terhambat.',
+                        timestamp: '2026-10-07 09:30',
+                        is_internal: false
+                    }
+                ]
+            },
+            {
+                id: 'TK-1002',
+                nama: 'Siti Aminah',
+                email: 'siti.aminah@balaipustaka.co.id',
+                divisi: 'Keuangan & SDM',
+                lokasi: 'Gedung B, Lt 1, Ruang Keuangan',
+                kategori: 'Software / Aplikasi',
+                perangkat: 'Aplikasi ERP / E-Faktur',
+                prioritas: 'Sedang',
+                deskripsi: 'Gagal login ke portal ERP Keuangan, muncul notifikasi "Database connection timeout".',
+                status: 'In Progress',
+                assignee: 'Siti (System Admin)',
+                created_at: '2026-10-07 10:15',
+                responses: [
+                    {
+                        sender: 'Siti Aminah',
+                        role: 'User',
+                        text: 'Gagal login dari tadi pagi.',
+                        timestamp: '2026-10-07 10:15',
+                        is_internal: false
+                    },
+                    {
+                        sender: 'Siti (System Admin)',
+                        role: 'Admin',
+                        text: 'Sedang dilakukan perbaikan konfigurasi koneksi server database.',
+                        timestamp: '2026-10-07 10:45',
+                        is_internal: false
+                    },
+                    {
+                        sender: 'Siti (System Admin)',
+                        role: 'Admin',
+                        text: 'Internal Note: DB Port 5432 sempat terblokir firewall lokal.',
+                        timestamp: '2026-10-07 11:00',
+                        is_internal: true
+                    }
+                ]
+            },
+            {
+                id: 'TK-1003',
+                nama: 'Eko Prasetyo',
+                email: 'eko.p@balaipustaka.co.id',
+                divisi: 'Pemasaran & Penjualan',
+                lokasi: 'Gedung A, Lt 3',
+                kategori: 'Jaringan / Internet / WiFi',
+                perangkat: 'Access Point WiFi Lt 3',
+                prioritas: 'Rendah',
+                deskripsi: 'Koneksi WiFi di area lorong lantai 3 agak lambat saat jam makan siang.',
+                status: 'Resolved',
+                assignee: 'Rian (Network Support)',
+                created_at: '2026-10-06 14:00',
+                responses: [
+                    {
+                        sender: 'Rian (Network Support)',
+                        role: 'Admin',
+                        text: 'Access point sudah direstart dan dilakukan penyesuaian bandwidth limit.',
+                        timestamp: '2026-10-06 16:30',
+                        is_internal: false
+                    }
+                ]
+            }
+        ];
+
+        window.onload = function() {
+            loadTicketsFromStorage();
+            lucide.createIcons();
+            initCharts();
+            updateDashboard();
+        };
+
+        function loadTicketsFromStorage() {
+            const stored = localStorage.getItem('bp_it_tickets');
+            if (stored) {
+                tickets = JSON.parse(stored);
+            } else {
+                tickets = [...initialMockTickets];
+                saveTicketsToStorage();
+            }
+        }
+
+        function saveTicketsToStorage() {
+            localStorage.setItem('bp_it_tickets', JSON.stringify(tickets));
+            updateDashboard();
+        }
+
+        function resetMockData() {
+            if (confirm('Apakah Anda yakin ingin mengembalikan data ke sampel awal?')) {
+                tickets = [...initialMockTickets];
+                saveTicketsToStorage();
+                showToast('Data berhasil di-reset ke sampel awal', 'success');
+            }
+        }
+
+        // Role Switcher Logic
+        function switchRole(role) {
+            currentRole = role;
+            const userBtn = document.getElementById('nav-user-btn');
+            const adminBtn = document.getElementById('nav-admin-btn');
+            const userView = document.getElementById('user-portal-view');
+            const adminView = document.getElementById('admin-dashboard-view');
+
+            if (role === 'user') {
+                userBtn.className = "flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-blue-600 text-white shadow";
+                adminBtn.className = "flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all";
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            } else {
+                adminBtn.className = "flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all bg-blue-600 text-white shadow";
+                userBtn.className = "flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all";
+                adminView.classList.remove('hidden');
+                userView.classList.add('hidden');
+                renderAdminTickets();
+                updateCharts();
+            }
+        }
+
+        // User Tabs Switching
+        function switchUserTab(tab) {
+            currentActiveUserTab = tab;
+            const createBtn = document.getElementById('tab-create-btn');
+            const historyBtn = document.getElementById('tab-history-btn');
+            const createSec = document.getElementById('user-create-section');
+            const historySec = document.getElementById('user-history-section');
+
+            if (tab === 'create') {
+                createBtn.className = "py-3 px-6 text-sm font-semibold border-b-2 border-blue-600 text-blue-600 flex items-center gap-2";
+                historyBtn.className = "py-3 px-6 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2";
+                createSec.classList.remove('hidden');
+                historySec.classList.add('hidden');
+            } else {
+                historyBtn.className = "py-3 px-6 text-sm font-semibold border-b-2 border-blue-600 text-blue-600 flex items-center gap-2";
+                createBtn.className = "py-3 px-6 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center gap-2";
+                historySec.classList.remove('hidden');
+                createSec.classList.add('hidden');
+                renderUserTickets();
+            }
+        }
+
+        // Form Submission
+        function handleCreateTicket(e) {
+            e.preventDefault();
+
+            const nama = document.getElementById('user_nama').value;
+            const email = document.getElementById('user_email').value;
+            const divisi = document.getElementById('user_divisi').value;
+            const lokasi = document.getElementById('user_lokasi').value;
+            const kategori = document.getElementById('user_kategori').value;
+            const perangkat = document.getElementById('user_perangkat').value || 'Tidak Disebutkan';
+            const prioritas = document.querySelector('input[name="prioritas"]:checked').value;
+            const deskripsi = document.getElementById('user_deskripsi').value;
+
+            const newTicket = {
+                id: 'TK-' + Math.floor(1000 + Math.random() * 9000),
+                nama,
+                email,
+                divisi,
+                lokasi,
+                kategori,
+                perangkat,
+                prioritas,
+                deskripsi,
+                status: 'Open',
+                assignee: 'Belum Ditugaskan',
+                created_at: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                responses: [
+                    {
+                        sender: nama,
+                        role: 'User',
+                        text: deskripsi,
+                        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                        is_internal: false
+                    }
+                ]
+            };
+
+            tickets.unshift(newTicket);
+            saveTicketsToStorage();
+
+            document.getElementById('create-ticket-form').reset();
+            showToast('Tiket berhasil dibuat dengan ID ' + newTicket.id, 'success');
+            
+            switchUserTab('history');
+        }
+
+        // Render Tickets for User Portal
+        function renderUserTickets() {
+            const listContainer = document.getElementById('user-tickets-list');
+            const searchKeyword = document.getElementById('user-search-input').value.toLowerCase();
+            
+            let filtered = tickets.filter(t => {
+                const matchStatus = currentUserStatusFilter === 'ALL' || t.status === currentUserStatusFilter;
+                const matchSearch = t.id.toLowerCase().includes(searchKeyword) ||
+                                    t.deskripsi.toLowerCase().includes(searchKeyword) ||
+                                    t.kategori.toLowerCase().includes(searchKeyword);
+                return matchStatus && matchSearch;
+            });
+
+            document.getElementById('user-ticket-count').innerText = tickets.length;
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+                        <p class="text-sm font-medium">Tidak ada tiket ditemukan.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            listContainer.innerHTML = filtered.map(t => `
+                <div class="bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-2xl p-5 transition cursor-pointer flex flex-col md:flex-row justify-between md:items-center gap-4" onclick="openTicketModal('${t.id}')">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-mono font-bold text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">${t.id}</span>
+                            ${getStatusBadge(t.status)}
+                            ${getPriorityBadge(t.prioritas)}
+                            <span class="text-xs text-slate-400">• ${t.created_at}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm">${t.kategori}</h4>
+                        <p class="text-xs text-slate-600 line-clamp-1">${t.deskripsi}</p>
+                    </div>
+                    <div class="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-slate-200">
+                        <div class="text-left md:text-right">
+                            <p class="text-[11px] text-slate-400">Teknisi:</p>
+                            <p class="text-xs font-semibold text-slate-700">${t.assignee}</p>
+                        </div>
+                        <button class="p-2 bg-white border border-slate-200 hover:border-blue-500 rounded-xl text-slate-500 hover:text-blue-600 shadow-sm transition">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function filterUserStatus(status) {
+            currentUserStatusFilter = status;
+            document.querySelectorAll('.user-status-filter').forEach(btn => {
+                if (btn.innerText.trim() === status || (status === 'ALL' && btn.innerText.trim() === 'Semua')) {
+                    btn.className = "user-status-filter bg-blue-50 text-blue-600 font-semibold px-3 py-1.5 rounded-lg text-xs";
+                } else {
+                    btn.className = "user-status-filter bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-xs";
+                }
+            });
+            renderUserTickets();
+        }
+
+        // Render Admin Table
+        function renderAdminTickets() {
+            const tableBody = document.getElementById('admin-tickets-table-body');
+            const searchKeyword = document.getElementById('admin-search').value.toLowerCase();
+            const statusFilter = document.getElementById('admin-filter-status').value;
+            const priorityFilter = document.getElementById('admin-filter-prioritas').value;
+            const categoryFilter = document.getElementById('admin-filter-kategori').value;
+
+            let filtered = tickets.filter(t => {
+                const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+                const matchPriority = priorityFilter === 'ALL' || t.prioritas === priorityFilter;
+                const matchCategory = categoryFilter === 'ALL' || t.kategori === categoryFilter;
+                const matchSearch = t.id.toLowerCase().includes(searchKeyword) ||
+                                    t.nama.toLowerCase().includes(searchKeyword) ||
+                                    t.deskripsi.toLowerCase().includes(searchKeyword);
+                return matchStatus && matchPriority && matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-400">
+                            Tidak ada data tiket yang cocok dengan filter.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = filtered.map(t => `
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="p-3 font-mono font-bold text-blue-600">${t.id}</td>
+                    <td class="p-3 text-slate-500">${t.created_at}</td>
+                    <td class="p-3">
+                        <p class="font-semibold text-slate-800">${t.nama}</p>
+                        <p class="text-[10px] text-slate-400">${t.divisi}</p>
+                    </td>
+                    <td class="p-3 text-slate-600">${t.kategori}</td>
+                    <td class="p-3">${getPriorityBadge(t.prioritas)}</td>
+                    <td class="p-3 font-medium text-slate-700">${t.assignee}</td>
+                    <td class="p-3">${getStatusBadge(t.status)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="openTicketModal('${t.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 font-semibold rounded-lg text-[11px] transition inline-flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Kelola
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        // Open Modal Details
+        function openTicketModal(ticketId) {
+            activeModalTicketId = ticketId;
+            const t = tickets.find(x => x.id === ticketId);
+            if (!t) return;
+
+            document.getElementById('modal-ticket-id').innerText = t.id;
+            document.getElementById('modal-ticket-status').className = getStatusBadgeClass(t.status);
+            document.getElementById('modal-ticket-status').innerText = t.status;
+
+            document.getElementById('modal-user-info').innerText = `${t.nama} (${t.divisi})`;
+            document.getElementById('modal-email-info').innerText = t.email;
+            document.getElementById('modal-lokasi-info').innerText = t.lokasi;
+            document.getElementById('modal-perangkat-info').innerText = t.perangkat;
+            document.getElementById('modal-kategori-info').innerText = t.kategori;
+            document.getElementById('modal-prioritas-info').innerText = t.prioritas;
+            document.getElementById('modal-deskripsi').innerText = t.deskripsi;
+
+            // Admin Control Fields
+            const adminActions = document.getElementById('modal-admin-actions');
+            const internalToggle = document.getElementById('internal-note-toggle-wrapper');
+
+            if (currentRole === 'admin') {
+                adminActions.classList.remove('hidden');
+                internalToggle.classList.remove('hidden');
+                document.getElementById('modal-status-select').value = t.status;
+                document.getElementById('modal-assignee-select').value = t.assignee;
+                document.getElementById('modal-priority-select').value = t.prioritas;
+            } else {
+                adminActions.classList.add('hidden');
+                internalToggle.classList.add('hidden');
+            }
+
+            renderModalResponses(t);
+
+            document.getElementById('ticket-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('ticket-modal').classList.add('hidden');
+            activeModalTicketId = null;
+        }
+
+        function renderModalResponses(ticket) {
+            const responsesContainer = document.getElementById('modal-responses-list');
+            
+            // Filter responses for normal users (hide internal notes)
+            const visibleResponses = ticket.responses.filter(r => currentRole === 'admin' || !r.is_internal);
+
+            if (visibleResponses.length === 0) {
+                responsesContainer.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada balasan tambahan.</p>`;
+                return;
+            }
+
+            responsesContainer.innerHTML = visibleResponses.map(r => `
+                <div class="p-3.5 rounded-xl text-xs ${r.is_internal ? 'bg-amber-50 border border-amber-200' : (r.role === 'Admin' ? 'bg-blue-50 border border-blue-100' : 'bg-slate-50 border border-slate-100')} space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold ${r.is_internal ? 'text-amber-800' : (r.role === 'Admin' ? 'text-blue-800' : 'text-slate-800')} flex items-center gap-1">
+                            ${r.sender} ${r.role === 'Admin' ? '<span class="bg-blue-200 text-blue-800 text-[9px] px-1.5 py-0.2 rounded font-semibold">IT Team</span>' : ''}
+                            ${r.is_internal ? '<span class="bg-amber-200 text-amber-900 text-[9px] px-1.5 py-0.2 rounded font-semibold">Catatan Internal</span>' : ''}
+                        </span>
+                        <span class="text-[10px] text-slate-400">${r.timestamp}</span>
+                    </div>
+                    <p class="text-slate-700 leading-relaxed">${r.text}</p>
+                </div>
+            `).join('');
+        }
+
+        // Modal Action Updaters
+        function updateTicketStatus() {
+            const newStatus = document.getElementById('modal-status-select').value;
+            const t = tickets.find(x => x.id === activeModalTicketId);
+            if (t) {
+                t.status = newStatus;
+                saveTicketsToStorage();
+                openTicketModal(t.id);
+                renderAdminTickets();
+                showToast(`Status tiket ${t.id} diubah menjadi ${newStatus}`, 'info');
+            }
+        }
+
+        function updateTicketAssignee() {
+            const newAssignee = document.getElementById('modal-assignee-select').value;
+            const t = tickets.find(x => x.id === activeModalTicketId);
+            if (t) {
+                t.assignee = newAssignee;
+                saveTicketsToStorage();
+                renderAdminTickets();
+                showToast(`Tiket ${t.id} ditugaskan kepada ${newAssignee}`, 'info');
+            }
+        }
+
+        function updateTicketPriority() {
+            const newPriority = document.getElementById('modal-priority-select').value;
+            const t = tickets.find(x => x.id === activeModalTicketId);
+            if (t) {
+                t.prioritas = newPriority;
+                saveTicketsToStorage();
+                openTicketModal(t.id);
+                renderAdminTickets();
+                showToast(`Prioritas tiket ${t.id} diubah ke ${newPriority}`, 'info');
+            }
+        }
+
+        function handleSendReply(e) {
+            e.preventDefault();
+            const textInput = document.getElementById('reply-text');
+            const isInternal = currentRole === 'admin' && document.getElementById('is-internal-note').checked;
+
+            if (!textInput.value.trim()) return;
+
+            const t = tickets.find(x => x.id === activeModalTicketId);
+            if (t) {
+                t.responses.push({
+                    sender: currentRole === 'admin' ? 'Tim IT Helpdesk' : t.nama,
+                    role: currentRole === 'admin' ? 'Admin' : 'User',
+                    text: textInput.value,
+                    timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                    is_internal: isInternal
+                });
+
+                // Auto move to In Progress if open and admin replies
+                if (currentRole === 'admin' && t.status === 'Open') {
+                    t.status = 'In Progress';
+                }
+
+                saveTicketsToStorage();
+                textInput.value = '';
+                document.getElementById('is-internal-note').checked = false;
+                openTicketModal(t.id);
+                renderAdminTickets();
+                showToast('Balasan berhasil ditambahkan', 'success');
+            }
+        }
+
+        // Dashboard Stats & Charts
+        function updateDashboard() {
+            const total = tickets.length;
+            const open = tickets.filter(t => t.status === 'Open').length;
+            const progress = tickets.filter(t => t.status === 'In Progress').length;
+            const resolved = tickets.filter(t => t.status === 'Resolved' || t.status === 'Closed').length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-open').innerText = open;
+            document.getElementById('stat-progress').innerText = progress;
+            document.getElementById('stat-resolved').innerText = resolved;
+
+            const badgeOpen = document.getElementById('badge-open-count');
+            if (open > 0) {
+                badgeOpen.innerText = open;
+                badgeOpen.classList.remove('hidden');
+            } else {
+                badgeOpen.classList.add('hidden');
+            }
+
+            if (currentRole === 'admin') {
+                renderAdminTickets();
+                updateCharts();
+            }
+        }
+
+        function initCharts() {
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 } } } }
+                }
+            });
+
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            statusChartInstance = new Chart(statusCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
+                    datasets: [{
+                        label: 'Jumlah Tiket',
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#64748b'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (!categoryChartInstance || !statusChartInstance) return;
+
+            // Category aggregation
+            const categories = {};
+            tickets.forEach(t => {
+                const cat = t.kategori.split(' ')[0]; // Short category name
+                categories[cat] = (categories[cat] || 0) + 1;
+            });
+
+            categoryChartInstance.data.labels = Object.keys(categories);
+            categoryChartInstance.data.datasets[0].data = Object.values(categories);
+            categoryChartInstance.update();
+
+            // Status aggregation
+            const statusCounts = {
+                'Open': tickets.filter(t => t.status === 'Open').length,
+                'In Progress': tickets.filter(t => t.status === 'In Progress').length,
+                'Resolved': tickets.filter(t => t.status === 'Resolved').length,
+                'Closed': tickets.filter(t => t.status === 'Closed').length
+            };
+
+            statusChartInstance.data.datasets[0].data = Object.values(statusCounts);
+            statusChartInstance.update();
+        }
+
+        // CSV Export
+        function exportToCSV() {
+            if (tickets.length === 0) {
+                showToast('Tidak ada data tiket untuk diekspor', 'error');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID Tiket,Nama Pelapor,Email,Divisi,Lokasi,Kategori,Perangkat,Prioritas,Status,Teknisi,Tanggal\n";
+
+            tickets.forEach(t => {
+                const row = [
+                    t.id,
+                    `"${t.nama}"`,
+                    `"${t.email}"`,
+                    `"${t.divisi}"`,
+                    `"${t.lokasi}"`,
+                    `"${t.kategori}"`,
+                    `"${t.perangkat}"`,
+                    t.prioritas,
+                    t.status,
+                    `"${t.assignee}"`,
+                    t.created_at
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `IT_Helpdesk_Export_${new Date().toISOString().substring(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast('Laporan berhasil diunduh dalam format CSV', 'success');
+        }
+
+        // Badge Render Helpers
+        function getStatusBadge(status) {
+            return `<span class="${getStatusBadgeClass(status)}">${status}</span>`;
+        }
+
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'Open': return 'bg-red-100 text-red-700 font-semibold text-[11px] px-2.5 py-0.5 rounded-full';
+                case 'In Progress': return 'bg-amber-100 text-amber-700 font-semibold text-[11px] px-2.5 py-0.5 rounded-full';
+                case 'Resolved': return 'bg-emerald-100 text-emerald-700 font-semibold text-[11px] px-2.5 py-0.5 rounded-full';
+                case 'Closed': return 'bg-slate-200 text-slate-700 font-semibold text-[11px] px-2.5 py-0.5 rounded-full';
+                default: return 'bg-slate-100 text-slate-600 font-semibold text-[11px] px-2.5 py-0.5 rounded-full';
+            }
+        }
+
+        function getPriorityBadge(priority) {
+            switch(priority) {
+                case 'Tinggi': return '<span class="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-2 py-0.5 rounded-md">Tinggi</span>';
+                case 'Sedang': return '<span class="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-md">Sedang</span>';
+                case 'Rendah': return '<span class="bg-green-50 text-green-600 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-md">Rendah</span>';
+                default: return '<span class="bg-blue-50 text-blue-600 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-md">Info</span>';
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800 text-white';
+            if (type === 'success') bg = 'bg-emerald-600 text-white';
+            if (type === 'error') bg = 'bg-red-600 text-white';
+
+            toast.className = `${bg} px-4 py-3 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 pointer-events-auto transition-all transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
