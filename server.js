@@ -14,21 +14,29 @@ const MIME_TYPES = {
     '.ico': 'image/x-icon'
 };
 
+const distDir = path.join(__dirname, 'dist');
+const hasDist = fs.existsSync(distDir);
+const publicDir = hasDist ? distDir : __dirname;
+
 const server = http.createServer((req, res) => {
     let reqPath = req.url.split('?')[0];
     if (reqPath === '/') reqPath = '/index.html';
 
-    const filePath = path.join(__dirname, reqPath);
+    let filePath = path.join(publicDir, reqPath);
 
     fs.readFile(filePath, (err, content) => {
         if (err) {
-            if (err.code === 'ENOENT') {
-                res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-                res.end('404 Not Found');
-            } else {
-                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-                res.end('500 Internal Server Error');
-            }
+            // SPA fallback to index.html if not found
+            const fallbackPath = path.join(publicDir, 'index.html');
+            fs.readFile(fallbackPath, (fbErr, fbContent) => {
+                if (fbErr) {
+                    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+                    res.end('404 Not Found');
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                    res.end(fbContent);
+                }
+            });
             return;
         }
 
